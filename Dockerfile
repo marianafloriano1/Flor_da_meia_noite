@@ -12,9 +12,11 @@ ENV NODE_ENV=production
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 ARG TASK007_LINT_SCOPE=0
+ARG TASK008_LINT_SCOPE=0
 ARG TASK009_LINT_SCOPE=0
 ARG TASK011_LINT_SCOPE=0
 RUN if [ "$TASK007_LINT_SCOPE" = "1" ]; then npm run lint:task007; \
+    elif [ "$TASK008_LINT_SCOPE" = "1" ]; then npm run lint:task008; \
     elif [ "$TASK009_LINT_SCOPE" = "1" ]; then npm run lint:task009; \
     elif [ "$TASK011_LINT_SCOPE" = "1" ]; then npm run lint:task011; \
     else npm run lint; fi \
