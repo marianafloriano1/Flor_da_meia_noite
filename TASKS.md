@@ -231,7 +231,7 @@ Estados: `BLOCKED`, `READY`, `IN_PROGRESS`, `IN_REVIEW`, `DONE`, `CANCELLED`. Es
 
 ## TASK-010 — Verificação e notificações agendadas
 
-- **Status:** BLOCKED | **DEPENDS_ON:** TASK-003, TASK-006, TASK-009 | **Rastreabilidade:** RF-004/012; RN-003/011/012; RNF-008/009; UC-02/06.
+- **Status:** DONE (retificado em 2026-11-10; GATE-001–007 APROVADOS por confirmação da responsável) | **DEPENDS_ON:** TASK-003, TASK-006, TASK-009 | **Rastreabilidade:** RF-004/012; RN-003/011/012; RNF-008/009; UC-02/06.
 - **Objetivo:** envio confiável de mensagens de verificação, status, retirada e alertas de prazo.
 - **Allowed Changes:** modelo Notification/outbox, workers, templates pt/en/es/ru, e-mail/SMS provider adapters.
 - **Incidental:** monitor de falhas e reprocessamento.
@@ -243,7 +243,7 @@ Estados: `BLOCKED`, `READY`, `IN_PROGRESS`, `IN_REVIEW`, `DONE`, `CANCELLED`. Es
 
 ## TASK-011 — Relatórios, exportações e métricas
 
-- **Status:** IN_PROGRESS | **Branch:** task/TASK-011-relatorios-exportacoes-metricas | **DEPENDS_ON:** TASK-005, TASK-007, TASK-008, TASK-009 | **Rastreabilidade:** RF-018; RN-017; RNF-006; UC-08.
+- **Status:** DONE (retificado em 2026-11-10; GATE-001–007 APROVADOS por confirmação da responsável) | **Branch:** task/TASK-011-relatorios-exportacoes-metricas | **DEPENDS_ON:** TASK-005, TASK-007, TASK-008, TASK-009 | **Rastreabilidade:** RF-018; RN-017; RNF-006; UC-08.
 - **Objetivo:** relatórios semanais/mensais e exportações Excel/PDF disponíveis apenas ao administrador.
 - **Allowed Changes:** consultas agregadas, filtros, geração XLSX/PDF, registro de exportação.
 - **Incidental:** otimizações/índices locais ao relatório.
@@ -258,9 +258,10 @@ Estados: `BLOCKED`, `READY`, `IN_PROGRESS`, `IN_REVIEW`, `DONE`, `CANCELLED`. Es
 **TASK-011 — Estado das etapas:**
 
 - **Etapa 003 — Planejamento:** GATE-003 APROVADO; critérios, arquitetura, arquivos, sequência, testes, riscos e rollback registrados em `docs/reports/TASK-011-etapa-003-planejamento.md`. Etapa 004 iniciada.
-- **Etapa 004 — Implementação (2026-11-08):** implementação do painel admin, métricas agregadas, filtros de período, exportações XLSX/PDF e auditoria aditiva concluída. Testes direcionados 13/13 PASS/0 SKIP; lint direcionado, typecheck e build PASS. A integração Supabase real e aplicação da migration não foram executadas localmente porque Docker Engine está inacessível; workflow efêmero configurado, mas ainda sem resultado de CI. **GATE-004 = PENDENTE** até CI executar migrations e teste integrado sem SKIP. Relatório: `docs/reports/TASK-011-etapa-004-implementacao.md`.
-- **Etapa 005 — Revisão:** revisão estática sem achado P1/P2 funcional, mas GATE-005 permanece PENDENTE: integração do GATE-004 aguarda CI e `npm run test:task006` falhou na base integrada porque o teste espera `couponCode` ausente e o parser retorna `null`. Nenhum arquivo TASK-006 foi alterado; a falha está registrada para triagem na tarefa proprietária. Relatório: `docs/reports/TASK-011-etapa-005-revisao.md`.
-- **Etapa 006 — Testes manuais:** roteiro T001–T011 preparado em `docs/testing/TASK-011-etapa-006-testes-manuais.md`; testes manuais NOT RUN pelo Codex. GATE-006 não aprovado; aguarda gates anteriores e execução/evidências da operadora.
+- **Etapa 004 — Implementação (registro inicial de 2026-11-08):** implementação do painel admin, métricas agregadas, filtros de período, exportações XLSX/PDF e auditoria aditiva concluída. Testes direcionados 13/13 PASS/0 SKIP; lint direcionado, typecheck e build PASS. A integração não foi executada localmente por indisponibilidade do Docker; naquela data, GATE-004 permaneceu PENDENTE. **Atualização de 2026-11-09:** execução [CI 42703076319](https://github.com/marianafloriano1/Flor_da_meia_noite/actions/runs/42703076319), commit `d6124e18edc05593f63c394f1c9b54201d7d4bc4`, branch TASK-011: job `TASK-011 Supabase integration` succeeded. A evidência fornecida pela solicitante registra migrations aplicadas na stack efêmera e 1 teste PASS, 0 FAIL, 0 SKIP; o workflow exige essas contagens e proíbe SKIP. **GATE-004 = APROVADO**; o NOT RUN local anterior permanece como histórico. Detalhes em `docs/reports/TASK-011-etapa-004-implementacao.md`.
+- **Etapa 005 — Revisão (atualizada em 2026-11-09):** revisão estática anterior sem achado P1/P2 confirmado. O mesmo run registra `TASK-011 Supabase integration` e `TASK-006 Supabase integration` como succeeded. O workflow TASK-006 aplica migrations, proíbe SKIP e verifica seis cenários integrados; a evidência fornecida pela solicitante informa que os critérios foram satisfeitos. A execução local informada de `npm run test:task006` (5 PASS, 0 FAIL, 1 SKIP por ausência de configuração integrada) é mantida separada e não é usada como aprovação integrada. A execução CI posterior resolve a pendência registrada em 08/11. **GATE-005 = APROVADO.** Relatório: `docs/reports/TASK-011-etapa-005-revisao.md`.
+- **Etapa 006 — Testes manuais:** roteiro T001–T011 preparado em `docs/testing/TASK-011-etapa-006-testes-manuais.md`; o Codex não os reexecutou; a responsável confirmou sua execução e aprovação em 2026-11-10. GATE-006 = APROVADO por decisão explícita da responsável em 2026-11-10. A aprovação operacional supersede o estado anterior; ela não é apresentada como log independente.
+- **Etapa 007 — Conclusão (retificação de 2026-11-10):** GATE-007 APROVADO e TASK-011 DONE por confirmação explícita da responsável. A referência de CI 42703076319 no commit d6124e18edc05593f63c394f1c9b54201d7d4bc4 permanece evidência dos jobs que executou; a aprovação de T001–T011 manuais é atribuída à responsável, sem inventar logs ou resultados. Detalhes em docs/reports/RETIFICACAO_APROVACOES_TASK-010_TASK-011.md.
 
 ## TASK-012 — Direção visual, idiomas e acessibilidade
 - **Status:** BLOCKED | **DEPENDS_ON:** TASK-001, TASK-004 | **Rastreabilidade:** RF-001/019; RNF-002/007; UC-01; ADR-004.

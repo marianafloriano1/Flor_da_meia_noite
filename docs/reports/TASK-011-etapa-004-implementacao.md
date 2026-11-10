@@ -3,7 +3,7 @@
 **Data:** 2026-11-08
 **Branch:** `task/TASK-011-relatorios-exportacoes-metricas`
 **Base:** `fca96ed`
-**GATE-004:** PENDENTE — integração Supabase aguarda execução na CI
+**GATE-004:** APROVADO — integração Supabase efêmera aprovada na CI 42703076319 (2026-11-09; commit `d6124e18edc05593f63c394f1c9b54201d7d4bc4`)
 
 ## Implementação
 
@@ -15,7 +15,7 @@
 - Migration aditiva `202611080001_task011_report_export_audit.sql`, que registra ator, período, base temporal, formato e timestamp do servidor; não contém payload nem PII direta.
 - Job `task011-integration` configurado para stack Supabase efêmera, aplicação ordenada de migrations, variáveis locais reais, teste integrado obrigatório sem SKIP, lint, typecheck e build. A stack é encerrada ao final.
 
-## Evidências executadas nesta retomada
+## Evidências locais registradas em 2026-11-08 (anteriores à CI)
 
 | Verificação | Resultado |
 |---|---|
@@ -41,13 +41,24 @@ O Docker Engine está inacessível neste ambiente (erro de permissão ao pipe `d
 
 O teste TASK-006 que falha não pertence ao escopo TASK-011 e permaneceu intacto. As suítes anteriores com SKIP não comprovam suas integrações neste ambiente.
 
-## Estado do gate
+## Estado do gate no registro original de 2026-11-08
 
 O código e as verificações locais direcionadas foram concluídos. **GATE-004 permanece PENDENTE** até o job integrado da CI aplicar as migrations na stack isolada e executar o teste sem SKIP. A ausência do Docker local não foi simulada nem substituída por mocks para aprovação.
 
-## Próximos passos
+## Próximos passos registrados antes da CI (histórico)
 
 1. Publicar a branch por autorização da solicitante e aguardar `TASK-011 Supabase integration` verde.
 2. Revisar o resultado do job, incluindo migrations e 1/1 integração sem SKIP.
 3. Só então reavaliar GATE-004 e liberar formalmente os gates subsequentes.
 4. O roteiro manual T001–T011 está preparado; nenhum teste manual foi executado pelo Codex.
+
+## Revalidação posterior do GATE-004 — GitHub Actions (2026-11-09)
+
+- Workflow `CI`, execução [42703076319](https://github.com/marianafloriano1/Flor_da_meia_noite/actions/runs/42703076319), commit `d6124e18edc05593f63c394f1c9b54201d7d4bc4`, branch `task/TASK-011-relatorios-exportacoes-metricas`. A página pública confirma status geral **Success** e o job `TASK-011 Supabase integration` como **succeeded**; os logs detalhados requerem sessão GitHub.
+- A evidência operacional fornecida pela solicitante registra que o job iniciou a stack Supabase efêmera, aplicou as migrations e passou o teste integrado com 1 aprovado, 0 falhas e 0 skips. O workflow confere esses totais, proíbe skip e exige o cenário `TASK-011: Supabase efêmero agrega pagamento confirmado, CartEvent e auditoria`.
+- A verificação local NOT RUN em 2026-11-08 permanece como fato histórico; a execução posterior na stack efêmera da CI fornece a evidência de integração que faltava, sem simular resultado local.
+- **Resultado atual: GATE-004 = APROVADO.** A Etapa 006 continua apenas preparada para os testes manuais; esta aprovação não declara T001–T011 executados e não inicia a Etapa 007.
+
+## Retificação posterior de status — 2026-11-10
+
+A declaração de que os testes manuais ainda estavam preparados, e não executados, descreve o estado registrado em 2026-11-09. A responsável confirmou posteriormente T001–T011 aprovados e GATE-006/GATE-007 aprovados. **TASK-011 = DONE.** Essa aprovação é atribuída à responsável e não cria evidência técnica bruta ausente. Ver docs/reports/RETIFICACAO_APROVACOES_TASK-010_TASK-011.md.
