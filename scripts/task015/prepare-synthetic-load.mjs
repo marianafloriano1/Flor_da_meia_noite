@@ -99,7 +99,7 @@ for (let index = 0; index < imageSpecs.length; index++) {
     await admin
       .from("catalog_products")
       .insert({
-        slug: `${fixtureRun}-${name.replace(".webp", "")}`,
+        slug: `${fixtureRun}-${name.replace(".webp", "").replaceAll("_", "-")}`,
         name: `Fixture sintética TASK-015 ${index + 1}`,
         product_type: "synthetic-load-fixture",
         description: "Dados sintéticos temporários para validação de carga.",
