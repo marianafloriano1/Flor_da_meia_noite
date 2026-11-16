@@ -280,7 +280,7 @@ Estados: `BLOCKED`, `READY`, `IN_PROGRESS`, `IN_REVIEW`, `DONE`, `CANCELLED`. Es
 
 ## TASK-013 — Segurança, backup, observabilidade e recuperação
 
-- **Status:** BLOCKED | **DEPENDS_ON:** TASK-001, TASK-002, TASK-003, TASK-005 | **Rastreabilidade:** RNF-003..006/008..011; ADR-001/002/005.
+- **Status:** DONE | **Branch:** task/TASK-013-seguranca-recuperacao | **Commit local:** bd163f7 | **DEPENDS_ON:** TASK-001, TASK-002, TASK-003, TASK-005 | **Rastreabilidade:** RNF-003..006/008..011; ADR-001/002/005.
 - **Objetivo:** preparar proteção e operação para produção confiável e permitir recuperação em RTO ≤24h.
 - **Allowed Changes:** pipeline de deploy de imagens OCI, configuração de runtime/container registry, alertas, backups/PITR, cópia, runbooks, gestão de secrets, políticas de bucket/database e custos.
 - **Incidental:** cabeçalhos/limites de segurança no gateway/app se necessários.
@@ -292,7 +292,7 @@ Estados: `BLOCKED`, `READY`, `IN_PROGRESS`, `IN_REVIEW`, `DONE`, `CANCELLED`. Es
 
 ## TASK-014 — Migração operacional de catálogo
 
-- **Status:** BLOCKED | **DEPENDS_ON:** TASK-004, TASK-007, TASK-012 | **Rastreabilidade:** RF-002; RN-002; UC-01/07.
+- **Status:** DONE | **Branch:** task/TASK-014-migracao-operacional-catalogo | **Base:** c37f43660981df3e634a1e3f467cd75b335b9664 | **DEPENDS_ON:** TASK-004, TASK-007, TASK-012 | **Rastreabilidade:** RF-002; RN-002; UC-01/07.
 - **Objetivo:** preparar processo seguro para funcionários cadastrar produtos, fotos, descrições e saldo manualmente.
 - **Allowed Changes:** guia de cadastro, formulário, validações, checklist de consistência e treinamento.
 - **Incidental:** melhorias de preenchimento em lote sem importar planilha, se aprovadas e localizadas.
@@ -300,6 +300,13 @@ Estados: `BLOCKED`, `READY`, `IN_PROGRESS`, `IN_REVIEW`, `DONE`, `CANCELLED`. Es
 - **Aceite:** equipe consegue cadastrar item por item; imagens otimizadas; categoria fixa; contagem conferida contra inventário físico antes de abrir vendas.
 - **Validação:** ensaio com produtos sintéticos; reconciliação manual documentada.
 - **DoD:** processo e responsabilidade de dupla conferência definidos.
+- **Etapa 001 — Recontextualização (2026-11-15):** GATE-001 APROVADO; branch isolada criada a partir do fechamento da TASK-012 c37f436. TASK-004, TASK-007 e TASK-012 constam como DONE nesta base. RF-002, RN-002 e UC-01/07 conferidos; escopo e proibições preservados. Painel administrativo existente suporta cadastro individual, categorias fixas, validação de imagens e ajuste de estoque auditável separado. Nenhum dado real foi migrado. Definir atribuições por papel para a dupla conferência no planejamento, sem inventar nomes. GATE-002 a GATE-007 pendentes; Etapa 002 habilitada, não iniciada. Sem testes, migrations, serviços ou alterações funcionais.
+- **Etapa 002 — Pré-condições (2026-11-15):** GATE-002 APROVADO; TASK-004/007/012 DONE; RF-002, RN-002, UC-01/07 confirmados; escopo e papéis definidos. Docker 29.9.2 e portas locais detectados; dependências/CLI/app não preparados, exigidos antes de GATE-006. Relatório: docs/reports/TASK-014-etapa-002-pre-condicoes.md.
+- **Etapa 003 — Planejamento (2026-11-15):** GATE-003 APROVADO. Plano limitado a guia, checklist, treinamento e documentação; reutiliza formulário/categorias/imagens/estoque existentes. Sem Excel automático ou alteração de dados. Relatório: docs/reports/TASK-014-etapa-003-planejamento.md.
+- **Etapa 004 — Implementação (2026-11-15):** GATE-004 APROVADO para processo documental. Guia de cadastro unitário, conferência e treinamento criado em docs/operations/TASK-014-cadastro-manual-catalogo.md. Sem alterações funcionais ou de dados; ensaio/reconciliação reservados a GATE-006. Relatório: docs/reports/TASK-014-etapa-004-implementacao.md.
+- **Etapa 005 — Revisão (2026-11-15):** GATE-005 APROVADO na revisão estática documental; Scope Guard e diff check PASS. Risco: dupla aprovação é procedimento humano, não controle backend. GATE-006 pendente e Etapa 006 não iniciada no momento daquela revisão, antes da execução manual de 15–16/11/2026; ver atualização posterior e relatório de testes. Relatório: docs/reports/TASK-014-etapa-005-revisao.md.
+- **Etapa 006 — Testes manuais (2026-11-15–16):** CONCLUÍDA; GATE-006 APROVADO conforme relato consolidado e evidências sanitizadas declaradas pela operadora. T001–T011: 11 executados, 11 aprovados, 0 reprovados/bloqueados/pendentes. Ambiente relatado: Supabase local flor-da-meia-noite-local; fixtures sintéticos; sem segredos/PII informados; arquivos temporários limpos conforme declaração. Produtos de ensaio permaneceram draft e não foram expostos no catálogo público. Detalhes e limitações de rastreabilidade: docs/testing/TASK-014-etapa-006-testes-manuais.md. Etapa 007/GATE-007 HABILITADA, ainda não iniciada.
+- **Etapa 007 — Conclusão (2026-11-16):** GATE-007 APROVADO; TASK-014 DONE após consolidação documental de GATE-001 a GATE-007 e T001–T011 conforme relato manual sanitizado da operadora. A proveniência e o limite de rastreabilidade estão registrados; nenhuma nova execução foi feita. Relatório: docs/reports/TASK-014-etapa-007-conclusao.md. Próxima elegível: nenhuma; TASK-015 continua BLOCKED; suas dependências estão registradas como DONE, mas as entregas ainda precisam ser integradas à base de TASK-015 e o perfil mensurável de carga/imagens segue sem acordo.
 
 ## TASK-015 — Capacidade, aceitação ponta a ponta e prontidão de lançamento
 
