@@ -263,8 +263,12 @@ Estados: `BLOCKED`, `READY`, `IN_PROGRESS`, `IN_REVIEW`, `DONE`, `CANCELLED`. Es
 - **Etapa 006 — Testes manuais:** roteiro T001–T011 preparado em `docs/testing/TASK-011-etapa-006-testes-manuais.md`; o Codex não os reexecutou; a responsável confirmou sua execução e aprovação em 2026-11-10. GATE-006 = APROVADO por decisão explícita da responsável em 2026-11-10. A aprovação operacional supersede o estado anterior; ela não é apresentada como log independente.
 - **Etapa 007 — Conclusão (retificação de 2026-11-10):** GATE-007 APROVADO e TASK-011 DONE por confirmação explícita da responsável. A referência de CI 42703076319 no commit d6124e18edc05593f63c394f1c9b54201d7d4bc4 permanece evidência dos jobs que executou; a aprovação de T001–T011 manuais é atribuída à responsável, sem inventar logs ou resultados. Detalhes em docs/reports/RETIFICACAO_APROVACOES_TASK-010_TASK-011.md.
 
+## Atualização de status — TASK-012 a TASK-014 (2026-11-16)
+
+- **Confirmação da responsável:** TASK-012, TASK-013 e TASK-014 estão DONE. Esta atualização registra somente os status informados, sem criar logs, resultados de testes ou evidências independentes. Os relatórios e ressalvas específicos permanecem nos registros das respectivas tarefas e não são incorporados por este commit.
+
 ## TASK-012 — Direção visual, idiomas e acessibilidade
-- **Status:** BLOCKED | **DEPENDS_ON:** TASK-001, TASK-004 | **Rastreabilidade:** RF-001/019; RNF-002/007; UC-01; ADR-004.
+- **Status:** DONE | **Branch:** task/TASK-012-direcao-visual-acessibilidade-integrada | **DEPENDS_ON:** TASK-001, TASK-004 | **Rastreabilidade:** RF-001/019; RNF-002/007; UC-01; ADR-004.
 - **Objetivo:** aplicar identidade visual gótica/industrial e experiência não convencional sem comprometer compra acessível.
 - **Allowed Changes:** componentes/styles; tokens cor/tipografia; microinterações; layouts responsivos; seletor de idioma; conteúdo institucional configurável.
 - **Incidental:** ajustes semânticos/accessibility diretamente ligados aos componentes.
@@ -276,7 +280,7 @@ Estados: `BLOCKED`, `READY`, `IN_PROGRESS`, `IN_REVIEW`, `DONE`, `CANCELLED`. Es
 
 ## TASK-013 — Segurança, backup, observabilidade e recuperação
 
-- **Status:** BLOCKED | **DEPENDS_ON:** TASK-001, TASK-002, TASK-003, TASK-005 | **Rastreabilidade:** RNF-003..006/008..011; ADR-001/002/005.
+- **Status:** DONE | **Branch:** task/TASK-013-seguranca-recuperacao | **DEPENDS_ON:** TASK-001, TASK-002, TASK-003, TASK-005 | **Rastreabilidade:** RNF-003..006/008..011; ADR-001/002/005.
 - **Objetivo:** preparar proteção e operação para produção confiável e permitir recuperação em RTO ≤24h.
 - **Allowed Changes:** pipeline de deploy de imagens OCI, configuração de runtime/container registry, alertas, backups/PITR, cópia, runbooks, gestão de secrets, políticas de bucket/database e custos.
 - **Incidental:** cabeçalhos/limites de segurança no gateway/app se necessários.
@@ -288,7 +292,7 @@ Estados: `BLOCKED`, `READY`, `IN_PROGRESS`, `IN_REVIEW`, `DONE`, `CANCELLED`. Es
 
 ## TASK-014 — Migração operacional de catálogo
 
-- **Status:** BLOCKED | **DEPENDS_ON:** TASK-004, TASK-007, TASK-012 | **Rastreabilidade:** RF-002; RN-002; UC-01/07.
+- **Status:** DONE | **Branch:** task/TASK-014-migracao-operacional-catalogo | **Base:** c37f436 | **DEPENDS_ON:** TASK-004, TASK-007, TASK-012 | **Rastreabilidade:** RF-002; RN-002; UC-01/07.
 - **Objetivo:** preparar processo seguro para funcionários cadastrar produtos, fotos, descrições e saldo manualmente.
 - **Allowed Changes:** guia de cadastro, formulário, validações, checklist de consistência e treinamento.
 - **Incidental:** melhorias de preenchimento em lote sem importar planilha, se aprovadas e localizadas.
