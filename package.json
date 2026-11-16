@@ -40,6 +40,9 @@
     "probe:task013": "node scripts/task013/probe.mjs",
     "lint:task013": "biome check scripts/task013 tests/task013",
     "test:task010": "node --import=tsx --test tests/task010/email-adapter.test.ts tests/task010/schedule.test.ts tests/task010/templates.test.ts tests/task010/worker.test.ts",
+    "test:task015": "node scripts/task015/run-e2e.mjs",
+    "load:task015": "node scripts/task015/load/run-local.mjs",
+    "lint:task015": "biome check scripts/task015 tests/task015 package.json",
     "test:task010:integration": "node --import=tsx --test tests/task010/notifications.integration.test.ts",
     "worker:transactional-notifications": "node src/workers/transactional-notifications.mjs",
     "lint:task010": "biome check src/lib/notifications src/workers/transactional-notifications.mjs tests/task010 package.json"

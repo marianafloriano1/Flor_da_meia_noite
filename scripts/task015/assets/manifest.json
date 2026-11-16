@@ -1,0 +1,25 @@
+{
+  "task": "TASK-015",
+  "assets": [
+    {
+      "name": "arranjo_flores.webp",
+      "sha256": "86bb20db284e977f2e6e5064c74afaeb49f688a5fc2aff0c1fd4a1f5266f2843"
+    },
+    {
+      "name": "buque_flores.webp",
+      "sha256": "e650db99573c2b21ce84ba53a645dd772230237bf44daa8904cce624b6f2a920"
+    },
+    {
+      "name": "buque_girassol.webp",
+      "sha256": "9a1ac8fd752c1e3470dcf72047752dfd52e22376c7798ffc923301284566872f"
+    },
+    {
+      "name": "buque_lirio.webp",
+      "sha256": "6181fb1d34ba540777aa13a188d9cd1102dbb3cc3d4b9cd4b1e5308fbe43fff8"
+    },
+    {
+      "name": "buque_rosas.webp",
+      "sha256": "2c50c9f4e2fbbd97b57fe9562951abff440a97d193bc3af2449125c430e377fb"
+    }
+  ]
+}
