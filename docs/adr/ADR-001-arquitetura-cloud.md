@@ -25,10 +25,14 @@ Adotar como arquitetura de referência Google Cloud: aplicação Next.js/TypeScr
 
 - Aumenta controle de disponibilidade, escala horizontal e integração direta com tradução; inclui cobrança variável e configuração inicial mais trabalhosa.
 - Cloud Run autoscaling precisa de limites de instâncias para proteger Cloud SQL e orçamento; sessões de carrinho/reserva devem estar no banco, nunca na memória do contêiner.
-- A região, a estratégia de envio de e-mail/SMS e o SLO de produção permanecem decisões de implantação.
+- A região do runtime da aplicação segue a decisão de alinhamento da TASK-013: São Paulo, com o código Cloud Run `southamerica-east1`, alinhado ao Supabase `sa-east-1`. Não há recurso implantado; qualquer provisionamento pago ainda exige aprovação específica. A estratégia de envio de e-mail/SMS permanece decisão de implantação.
 - Imagens devem ser reproduzíveis, sem segredos embutidos e com dependências/runtime declarados; validar construção e inicialização como gates de CI.
 - Testes gratuitos não reproduzem plenamente HA, throughput e entrega SMS de produção.
 
 ## Evidência consultada
 
 [Cloud Run autoscaling](https://docs.cloud.google.com/run/docs/about-instance-autoscaling), [concurrency](https://docs.cloud.google.com/run/docs/about-concurrency), [Cloud SQL HA](https://docs.cloud.google.com/sql/docs/postgres/high-availability), [Cloud SQL restore/PITR](https://docs.cloud.google.com/sql/docs/postgres/backup-recovery/restore), [Vercel Hobby](https://vercel.com/docs/plans/hobby).
+
+## Adendo operacional — TASK-013 (2026-11-13)
+
+A responsável aprovou SLO desejado de 99,5% mensal e a região `sa-east-1` (São Paulo) para Supabase. Em 2026-11-14, determinou alinhamento do runtime e armazenamento operacional à região principal: Cloud Run em São Paulo (`southamerica-east1`). Essas definições são metas/direções; não provam SLO ou backup medidos nem representam recurso provisionado. Dump diário, cópia integral dos bytes Storage com SHA-256, RPO/RTO, SLI e ressalvas de billing estão em `docs/architecture/TASK-013-backup-recuperacao.md`.
