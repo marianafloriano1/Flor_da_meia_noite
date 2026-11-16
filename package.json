@@ -33,7 +33,12 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test:task011": "node --conditions=react-server --experimental-test-module-mocks --import=tsx --test tests/task011/reports.test.ts tests/task011/reports.routes.test.ts",
     "test:task011:integration": "node --conditions=react-server --import=tsx --test --test-reporter=tap tests/task011/reports.integration.test.ts",
-    "lint:task011": "biome check src/app/admin/reports src/app/api/admin/reports src/lib/reports tests/task011 package.json"
+    "lint:task011": "biome check src/app/admin/reports src/app/api/admin/reports src/lib/reports tests/task011 package.json",
+    "test:task013": "node --test tests/task013/*.test.mjs",
+    "backup:task013": "node scripts/task013/backup.mjs",
+    "restore:task013": "node scripts/task013/restore.mjs",
+    "probe:task013": "node scripts/task013/probe.mjs",
+    "lint:task013": "biome check scripts/task013 tests/task013"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -54,5 +59,10 @@
     "supabase": "^2.122.0",
     "tsx": "4.23.15",
     "typescript": "5.9.3"
+  },
+  "overrides": {
+    "exceljs": {
+      "uuid": "11.1.1"
+    }
   }
 }
