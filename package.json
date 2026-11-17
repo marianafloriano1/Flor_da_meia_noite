@@ -25,7 +25,7 @@
     "worker:reservation-expiration": "node src/workers/reservation-expiration.mjs",
     "worker:catalog-stock-alerts": "node src/workers/catalog-stock-alerts.mjs",
     "test:auth:supabase-mfa": "node --import=tsx --test tests/auth/task003.supabase-mfa.test.ts",
-    "lint": "biome check src tests/auth tests/catalog tests/translation next.config.ts",
+    "lint": "biome check src tests/auth tests/catalog tests/translation tests/task010 next.config.ts",
     "lint:task007": "biome check src/app/admin/catalog src/app/api/admin/catalog src/lib/catalog/admin-authorization.ts src/lib/catalog/admin-service.ts src/lib/catalog/admin-validation.ts src/lib/catalog/authorization.ts src/lib/storage/catalog-image-validation.ts src/lib/storage/catalog-products.ts src/workers/catalog-stock-alerts.mjs tests/task007 package.json",
     "lint:task008": "biome check src/app/admin/coupons src/app/api/admin/coupons src/app/cart/page.tsx src/app/api/orders/quote/route.ts src/app/api/orders/route.ts src/lib/coupons src/lib/orders/types.ts src/lib/orders/validation.ts tests/task008 package.json",
     "lint:task009": "biome check src/app/admin/orders src/app/orders src/app/api/admin/orders src/app/api/orders src/lib/orders tests/task009 package.json",
@@ -33,7 +33,19 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test:task011": "node --conditions=react-server --experimental-test-module-mocks --import=tsx --test tests/task011/reports.test.ts tests/task011/reports.routes.test.ts",
     "test:task011:integration": "node --conditions=react-server --import=tsx --test --test-reporter=tap tests/task011/reports.integration.test.ts",
-    "lint:task011": "biome check src/app/admin/reports src/app/api/admin/reports src/lib/reports tests/task011 package.json"
+    "lint:task011": "biome check src/app/admin/reports src/app/api/admin/reports src/lib/reports tests/task011 package.json",
+    "test:task013": "node --test tests/task013/*.test.mjs",
+    "backup:task013": "node scripts/task013/backup.mjs",
+    "restore:task013": "node scripts/task013/restore.mjs",
+    "probe:task013": "node scripts/task013/probe.mjs",
+    "lint:task013": "biome check scripts/task013 tests/task013",
+    "test:task010": "node --import=tsx --test tests/task010/email-adapter.test.ts tests/task010/schedule.test.ts tests/task010/templates.test.ts tests/task010/worker.test.ts",
+    "test:task015": "node scripts/task015/run-e2e.mjs",
+    "load:task015": "node scripts/task015/load/run-local.mjs",
+    "lint:task015": "biome check scripts/task015 tests/task015 package.json",
+    "test:task010:integration": "node --import=tsx --test tests/task010/notifications.integration.test.ts",
+    "worker:transactional-notifications": "node src/workers/transactional-notifications.mjs",
+    "lint:task010": "biome check src/lib/notifications src/workers/transactional-notifications.mjs tests/task010 package.json"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -43,7 +55,8 @@
     "pdfkit": "^0.20.2",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "nodemailer": "^10.3.1"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.2",
@@ -54,5 +67,10 @@
     "supabase": "^2.122.0",
     "tsx": "4.23.15",
     "typescript": "5.9.3"
+  },
+  "overrides": {
+    "exceljs": {
+      "uuid": "11.1.1"
+    }
   }
 }
