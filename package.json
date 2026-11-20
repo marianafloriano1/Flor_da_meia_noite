@@ -35,7 +35,19 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test:task011": "node --conditions=react-server --experimental-test-module-mocks --import=tsx --test tests/task011/reports.test.ts tests/task011/reports.routes.test.ts",
     "test:task011:integration": "node --conditions=react-server --import=tsx --test --test-reporter=tap tests/task011/reports.integration.test.ts",
-    "lint:task011": "biome check src/app/admin/reports src/app/api/admin/reports src/lib/reports tests/task011 package.json"
+    "lint:task011": "biome check src/app/admin/reports src/app/api/admin/reports src/lib/reports tests/task011 package.json",
+    "test:task013": "node --test tests/task013/*.test.mjs",
+    "backup:task013": "node scripts/task013/backup.mjs",
+    "restore:task013": "node scripts/task013/restore.mjs",
+    "probe:task013": "node scripts/task013/probe.mjs",
+    "lint:task013": "biome check scripts/task013 tests/task013",
+    "test:task010": "node --import=tsx --test tests/task010/email-adapter.test.ts tests/task010/schedule.test.ts tests/task010/templates.test.ts tests/task010/worker.test.ts",
+    "test:task015": "node scripts/task015/run-e2e.mjs",
+    "load:task015": "node scripts/task015/load/run-local.mjs",
+    "lint:task015": "biome check scripts/task015 tests/task015 package.json",
+    "test:task010:integration": "node --import=tsx --test tests/task010/notifications.integration.test.ts",
+    "worker:transactional-notifications": "node src/workers/transactional-notifications.mjs",
+    "lint:task010": "biome check src/lib/notifications src/workers/transactional-notifications.mjs tests/task010 package.json"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -45,7 +57,8 @@
     "pdfkit": "^0.20.2",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "nodemailer": "^10.3.1"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.2",
@@ -56,5 +69,10 @@
     "supabase": "^2.122.0",
     "tsx": "4.23.15",
     "typescript": "5.9.3"
+  },
+  "overrides": {
+    "exceljs": {
+      "uuid": "11.1.1"
+    }
   }
 }
