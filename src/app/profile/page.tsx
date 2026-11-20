@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { SiteNavigation } from "@/app/components/site-navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 type Profile = { full_name: string; email: string; phone_e164: string };
@@ -153,6 +154,7 @@ export default function ProfilePage() {
   return (
     <main className="page-shell">
       <section className="intro auth-card">
+        <SiteNavigation compact />
         <p className="eyebrow">FLOR DA MEIA-NOITE</p>
         <h1>Meu perfil</h1>
         {profile ? (

@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { SiteNavigation } from "@/app/components/site-navigation";
 
 const labels: Record<string, string> = {
   awaiting_payment: "Aguardando pagamento",
@@ -71,10 +71,7 @@ export default function OrderTrackingPage() {
 
   return (
     <main className="catalog-shell">
-      <nav className="catalog-nav">
-        <Link href="/">Flor da Meia-Noite</Link>
-        <Link href="/cart">Carrinho</Link>
-      </nav>
+      <SiteNavigation />
       <header className="catalog-header">
         <p className="eyebrow">SUA CONTA</p>
         <h1>Acompanhar pedido</h1>

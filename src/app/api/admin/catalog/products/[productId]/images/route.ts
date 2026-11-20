@@ -20,6 +20,8 @@ export async function POST(request: Request, context: Context) {
   const height = Number(form?.get("height"));
   if (!(file instanceof File) || typeof altText !== "string" || file.size > 10 * 1024 * 1024)
     return NextResponse.json({ error: "invalid_catalog_image" }, { status: 400 });
+  if (width !== 1000 || height !== 1250)
+    return NextResponse.json({ error: "catalog_image_dimensions_invalid" }, { status: 400 });
 
   const { data: product, error: productError } = await getSupabaseAdminClient()
     .from("catalog_products")

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { connection } from "next/server";
+import { SiteNavigation } from "@/app/components/site-navigation";
 import { requireSession } from "@/lib/auth/http";
 import CatalogAdmin from "./panel";
 
@@ -17,10 +18,7 @@ export default async function CatalogAdminPage() {
 
   return (
     <main className="catalog-shell">
-      <nav className="catalog-nav" aria-label="Navegação principal">
-        <Link href="/catalog">Catálogo público</Link>
-        <Link href="/">Flor da Meia-Noite</Link>
-      </nav>
+      <SiteNavigation />
       <header className="catalog-header">
         <p className="eyebrow">ADMINISTRAÇÃO</p>
         <h1>Produtos e estoque</h1>

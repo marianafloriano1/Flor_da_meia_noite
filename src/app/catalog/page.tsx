@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { SiteNavigation } from "@/app/components/site-navigation";
 import {
   catalogProductHref,
   filtersFromSearchParams,
@@ -56,7 +57,7 @@ function ProductCard({
       </Link>
       <div className="catalog-card-content">
         <p className="catalog-card-category">{product.category}</p>
-        <h2>
+        <h2 className="catalog-card-title">
           <Link href={catalogProductHref(product.slug, locale)}>{product.name}</Link>{" "}
         </h2>
         <p className="catalog-card-copy">{product.description || "Descrição não disponível."}</p>
@@ -96,10 +97,7 @@ export default async function CatalogPage({
 
   return (
     <main className="catalog-shell">
-      <nav className="catalog-nav" aria-label="Navegação principal">
-        <Link href="/">Flor da Meia-Noite</Link>
-        <Link href="/auth">Entrar ou criar conta</Link>
-      </nav>
+      <SiteNavigation />
       <header className="catalog-header">
         <p className="eyebrow">CATÁLOGO</p>
         <h1>Flores e objetos para florescer.</h1>

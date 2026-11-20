@@ -1,7 +1,7 @@
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import ProductActions from "@/app/catalog/[slug]/product-actions";
+import { SiteNavigation } from "@/app/components/site-navigation";
 import { getCatalogLocale, readPublicProduct } from "@/lib/catalog/service";
 import type { PublicCatalogProduct } from "@/lib/catalog/types";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -13,32 +13,40 @@ function formatPrice(value: number): string {
 function ProductDetails({ product }: { product: PublicCatalogProduct }) {
   return (
     <>
-      {product.photos.length > 0 && (
-        <div className="product-gallery">
-          {product.photos.map((photo, index) => (
-            <figure key={photo.url} className="product-photo">
-              <Image
-                src={photo.url}
-                alt={photo.altText}
-                fill
-                preload={index === 0}
-                sizes="(max-width: 800px) 100vw, 50vw"
-              />
-            </figure>
-          ))}
-        </div>
-      )}
-      <p className="catalog-card-category">{product.category}</p>
-      <h1>{product.name}</h1>
-      <p className="description">{product.description || "Descrição não disponível."}</p>
-      <p className="catalog-card-price">{formatPrice(product.priceBrl)}</p>
-      <p>Disponível</p>
-      <ProductActions productSlug={product.slug} />
-      {product.lowStockAlert && (
-        <p className="catalog-low-stock-alert" role="status">
-          Últimas unidades disponíveis.
-        </p>
-      )}
+      <div className="product-detail-layout">
+        {product.photos.length > 0 && (
+          <div className="product-gallery">
+            {product.photos.map((photo, index) => (
+              <figure key={photo.url} className="product-photo">
+                <Image
+                  src={photo.url}
+                  alt={photo.altText}
+                  fill
+                  unoptimized={
+                    photo.url.startsWith("http://127.0.0.1:") ||
+                    photo.url.startsWith("http://localhost:")
+                  }
+                  preload={index === 0}
+                  sizes="(max-width: 800px) 100vw, 50vw"
+                />
+              </figure>
+            ))}
+          </div>
+        )}
+        <section className="product-detail-info" aria-labelledby="product-name">
+          <p className="catalog-card-category">{product.category}</p>
+          <h1 id="product-name">{product.name}</h1>
+          <p className="description">{product.description || "Descrição não disponível."}</p>
+          <p className="catalog-card-price">{formatPrice(product.priceBrl)}</p>
+          <p className="product-availability">Disponível</p>
+          <ProductActions productSlug={product.slug} />
+          {product.lowStockAlert && (
+            <p className="catalog-low-stock-alert" role="status">
+              Últimas unidades disponíveis.
+            </p>
+          )}
+        </section>
+      </div>
       <dl className="product-attributes">
         <div>
           <dt>Tipo</dt>
@@ -112,11 +120,7 @@ export default async function CatalogProductPage({
 
   return (
     <main className="catalog-shell">
-      <nav className="catalog-nav" aria-label="Navegação principal">
-        <Link href="/">Flor da Meia-Noite</Link>
-        <Link href="/catalog">Voltar ao catálogo</Link>
-        <Link href="/cart">Carrinho</Link>
-      </nav>
+      <SiteNavigation />
       {unavailable ? (
         <section className="intro" role="status">
           <h1>Produto temporariamente indisponível</h1>

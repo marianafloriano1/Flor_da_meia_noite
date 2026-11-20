@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { SiteNavigation } from "@/app/components/site-navigation";
 
 type AdminOrder = {
   id: string;
@@ -93,10 +93,7 @@ export default function AdminOrdersPage() {
 
   return (
     <main className="catalog-shell">
-      <nav className="catalog-nav">
-        <Link href="/">Flor da Meia-Noite</Link>
-        <Link href="/profile">Perfil</Link>
-      </nav>
+      <SiteNavigation />
       <header className="catalog-header">
         <p className="eyebrow">OPERAÇÃO</p>
         <h1>Fila de pedidos</h1>
