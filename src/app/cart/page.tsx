@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { SiteNavigation } from "@/app/components/site-navigation";
 import type { CreatedOrder, OrderQuote } from "@/lib/orders/types";
 
 type CartItem = {
@@ -255,10 +256,7 @@ export default function CartPage() {
 
   return (
     <main className="catalog-shell">
-      <nav className="catalog-nav" aria-label="Navegação principal">
-        <Link href="/">Flor da Meia-Noite</Link>
-        <Link href="/catalog">Voltar ao catálogo</Link>
-      </nav>
+      <SiteNavigation />
       <header className="catalog-header">
         <p className="eyebrow">SUA CONTA</p>
         <h1>Carrinho</h1>

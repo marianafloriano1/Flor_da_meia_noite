@@ -102,6 +102,23 @@ export async function registerAdminSession(identity: VerifiedIdentity): Promise<
     getAdminSessionInsertOptions(),
   );
   if (error) throw new Error("ADMIN_SESSION_REGISTRATION_FAILED");
+
+  // Initial sign-in may have inserted this session at AAL1. Refresh its MFA timestamp
+  // only when Auth has verified a recent AAL2 proof; never elevate from an AAL1 session.
+  if (identity.aal === "aal2" && identity.recentMfaAt) {
+    const refreshed = await db
+      .from("admin_auth_sessions")
+      .update({
+        mfa_verified_at: identity.recentMfaAt.toISOString(),
+        last_activity_at: new Date().toISOString(),
+      })
+      .eq("session_id", identity.sessionId)
+      .eq("user_id", identity.uid)
+      .is("revoked_at", null)
+      .select("session_id")
+      .maybeSingle();
+    if (refreshed.error || !refreshed.data) throw new Error("ADMIN_SESSION_MFA_REFRESH_FAILED");
+  }
 }
 
 export async function clearSessionCookie(): Promise<void> {

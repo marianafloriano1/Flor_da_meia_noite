@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { SiteNavigation } from "@/app/components/site-navigation";
 import { requireSession } from "@/lib/auth/http";
 import { listCoupons } from "@/lib/coupons/service";
 import type { Coupon } from "@/lib/coupons/types";
@@ -18,9 +18,7 @@ export default async function CouponsAdminPage() {
   }
   return (
     <main className="catalog-shell">
-      <nav className="catalog-nav" aria-label="Navegação administrativa">
-        <Link href="/admin/catalog">Catálogo</Link>
-      </nav>
+      <SiteNavigation />
       <header className="catalog-header">
         <p className="eyebrow">ADMINISTRAÇÃO</p>
         <h1>Cupons</h1>

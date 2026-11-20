@@ -59,6 +59,52 @@ const emptyDraft: Draft = {
   status: "draft",
 };
 
+const productImageWidth = 1000;
+const productImageHeight = 1250;
+
+async function normalizeProductImage(file: File): Promise<File> {
+  const bitmap = await createImageBitmap(file);
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = productImageWidth;
+    canvas.height = productImageHeight;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Não foi possível preparar a imagem.");
+
+    const scale = Math.max(productImageWidth / bitmap.width, productImageHeight / bitmap.height);
+    const cropWidth = productImageWidth / scale;
+    const cropHeight = productImageHeight / scale;
+    const cropX = (bitmap.width - cropWidth) / 2;
+    const cropY = (bitmap.height - cropHeight) / 2;
+    context.drawImage(
+      bitmap,
+      cropX,
+      cropY,
+      cropWidth,
+      cropHeight,
+      0,
+      0,
+      productImageWidth,
+      productImageHeight,
+    );
+
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (result) => (result ? resolve(result) : reject(new Error("Falha ao converter a imagem."))),
+        "image/webp",
+        0.9,
+      );
+    });
+    if (blob.type !== "image/webp") throw new Error("Este navegador não conseguiu gerar WebP.");
+    if (blob.size > 10 * 1024 * 1024)
+      throw new Error("A imagem preparada excede o limite de 10 MiB.");
+
+    return new File([blob], "produto-1000x1250.webp", { type: "image/webp" });
+  } finally {
+    bitmap.close();
+  }
+}
+
 function toDraft(product: Product): Draft {
   return {
     slug: product.slug,
@@ -186,13 +232,12 @@ export default function CatalogAdmin() {
     setError("");
     setNotice("");
     try {
-      const bitmap = await createImageBitmap(file);
+      const normalizedImage = await normalizeProductImage(file);
       const body = new FormData();
-      body.set("file", file);
+      body.set("file", normalizedImage);
       body.set("altText", altText);
-      body.set("width", String(bitmap.width));
-      body.set("height", String(bitmap.height));
-      bitmap.close();
+      body.set("width", String(productImageWidth));
+      body.set("height", String(productImageHeight));
       const response = await fetch(`/api/admin/catalog/products/${productId}/images`, {
         method: "POST",
         body,
@@ -219,225 +264,269 @@ export default function CatalogAdmin() {
   }
 
   return (
-    <section aria-label="Gerenciamento do catálogo">
+    <section aria-label="Gerenciamento do catálogo" className="catalog-admin">
       {notice && <p role="status">{notice}</p>}
       {error && <p role="alert">{error}</p>}
-      <form onSubmit={submitProduct}>
-        <h2>{editingId ? "Editar produto" : "Cadastrar produto"}</h2>
+      <form className="catalog-admin-form" onSubmit={submitProduct}>
+        <header className="catalog-admin-form-heading">
+          <p className="eyebrow">GESTÃO DO CATÁLOGO</p>
+          <h2>{editingId ? "Editar produto" : "Cadastrar produto"}</h2>
+        </header>
         {!editingId && (
-          <p>
+          <p className="catalog-admin-stock-note">
             O produto começa com estoque zero. Registre o saldo inicial no ajuste auditável após
             cadastrar.
           </p>
         )}
-        <label>
-          Slug{" "}
-          <input
-            required
-            maxLength={120}
-            value={draft.slug}
-            onChange={(e) => setField("slug", e.target.value)}
-          />
-        </label>
-        <label>
-          Nome{" "}
-          <input
-            required
-            maxLength={200}
-            value={draft.name}
-            onChange={(e) => setField("name", e.target.value)}
-          />
-        </label>
-        <label>
-          Tipo{" "}
-          <input
-            required
-            maxLength={100}
-            value={draft.productType}
-            onChange={(e) => setField("productType", e.target.value)}
-          />
-        </label>
-        <label>
-          Descrição{" "}
-          <textarea
-            maxLength={10000}
-            value={draft.description}
-            onChange={(e) => setField("description", e.target.value)}
-          />
-        </label>
-        <label>
-          Cores (separadas por vírgula){" "}
-          <input value={draft.colors} onChange={(e) => setField("colors", e.target.value)} />
-        </label>
-        <label>
-          Preço (BRL){" "}
-          <input
-            required
-            type="number"
-            min="0"
-            max="99999999.99"
-            step="0.01"
-            value={draft.priceBrl}
-            onChange={(e) => setField("priceBrl", e.target.value)}
-          />
-        </label>
-        <label>
-          Categoria{" "}
-          <select value={draft.category} onChange={(e) => setField("category", e.target.value)}>
-            {CATALOG_CATEGORIES.map((category) => (
-              <option key={category}>{category}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Ocasião{" "}
-          <input value={draft.occasion} onChange={(e) => setField("occasion", e.target.value)} />
-        </label>
-        <label>
-          Tamanho <input value={draft.size} onChange={(e) => setField("size", e.target.value)} />
-        </label>
-        <label>
-          Materiais (separados por vírgula){" "}
-          <input value={draft.materials} onChange={(e) => setField("materials", e.target.value)} />
-        </label>
-        <label>
-          Cuidados{" "}
-          <textarea
-            value={draft.careInstructions}
-            onChange={(e) => setField("careInstructions", e.target.value)}
-          />
-        </label>
-        <label>
-          Significado das flores{" "}
-          <textarea
-            value={draft.flowerMeaning}
-            onChange={(e) => setField("flowerMeaning", e.target.value)}
-          />
-        </label>
-        <label>
-          Toxicidade para animais{" "}
-          <textarea
-            value={draft.petToxicity}
-            onChange={(e) => setField("petToxicity", e.target.value)}
-          />
-        </label>
-        <label>
-          Prazo de validade/perda{" "}
-          <textarea
-            value={draft.shelfLife}
-            onChange={(e) => setField("shelfLife", e.target.value)}
-          />
-        </label>
-        <label>
-          Estado{" "}
-          <select
-            value={draft.status}
-            onChange={(e) => setField("status", e.target.value as Draft["status"])}
-          >
-            <option value="draft">Rascunho</option>
-            <option value="published">Publicado</option>
-          </select>
-        </label>
-        <button disabled={busy} type="submit">
-          {editingId ? "Salvar edição" : "Cadastrar produto"}
-        </button>
-        {editingId && (
-          <button
-            disabled={busy}
-            type="button"
-            onClick={() => {
-              setEditingId(null);
-              setDraft(emptyDraft);
-            }}
-          >
-            Cancelar edição
+        <div className="catalog-admin-form-grid">
+          <div className="catalog-admin-column">
+            <label>
+              Nome
+              <input
+                required
+                maxLength={200}
+                value={draft.name}
+                onChange={(e) => setField("name", e.target.value)}
+              />
+            </label>
+            <label>
+              Categoria
+              <select value={draft.category} onChange={(e) => setField("category", e.target.value)}>
+                {CATALOG_CATEGORIES.map((category) => (
+                  <option key={category}>{category}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Materiais (separados por vírgula)
+              <input
+                value={draft.materials}
+                onChange={(e) => setField("materials", e.target.value)}
+              />
+            </label>
+            <label>
+              Toxicidade para animais
+              <textarea
+                value={draft.petToxicity}
+                onChange={(e) => setField("petToxicity", e.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="catalog-admin-column">
+            <label>
+              Slug
+              <input
+                required
+                maxLength={120}
+                value={draft.slug}
+                onChange={(e) => setField("slug", e.target.value)}
+              />
+            </label>
+            <label>
+              Ocasião
+              <input
+                value={draft.occasion}
+                onChange={(e) => setField("occasion", e.target.value)}
+              />
+            </label>
+            <label>
+              Tipo
+              <input
+                required
+                maxLength={100}
+                value={draft.productType}
+                onChange={(e) => setField("productType", e.target.value)}
+              />
+            </label>
+            <label>
+              Descrição do produto
+              <textarea
+                maxLength={10000}
+                value={draft.description}
+                onChange={(e) => setField("description", e.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="catalog-admin-column">
+            <label>
+              Cores (separadas por vírgula)
+              <input value={draft.colors} onChange={(e) => setField("colors", e.target.value)} />
+            </label>
+            <label>
+              Significado das flores
+              <textarea
+                value={draft.flowerMeaning}
+                onChange={(e) => setField("flowerMeaning", e.target.value)}
+              />
+            </label>
+            <label>
+              Cuidados
+              <textarea
+                value={draft.careInstructions}
+                onChange={(e) => setField("careInstructions", e.target.value)}
+              />
+            </label>
+            <label>
+              Estado
+              <select
+                value={draft.status}
+                onChange={(e) => setField("status", e.target.value as Draft["status"])}
+              >
+                <option value="draft">Rascunho</option>
+                <option value="published">Publicado</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="catalog-admin-column">
+            <label>
+              Preço (BRL)
+              <input
+                className="catalog-admin-price-input"
+                required
+                type="number"
+                min="0"
+                max="99999999.99"
+                step="0.01"
+                value={draft.priceBrl}
+                onChange={(e) => setField("priceBrl", e.target.value)}
+              />
+            </label>
+            <label>
+              Tamanho
+              <input value={draft.size} onChange={(e) => setField("size", e.target.value)} />
+            </label>
+            <label>
+              Prazo de validade/perda
+              <textarea
+                value={draft.shelfLife}
+                onChange={(e) => setField("shelfLife", e.target.value)}
+              />
+            </label>
+            <div className="catalog-admin-image-hint">
+              <span aria-hidden="true" className="catalog-admin-image-symbol">
+                ✿
+              </span>
+              <strong>Imagem do produto</strong>
+              <span>
+                Após salvar, associe no cartão abaixo. A imagem será ajustada para 1000 × 1250 px.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="catalog-admin-form-actions">
+          <button disabled={busy} type="submit">
+            {editingId ? "Salvar edição" : "Cadastrar produto"}
           </button>
-        )}
+          {editingId && (
+            <button
+              disabled={busy}
+              type="button"
+              onClick={() => {
+                setEditingId(null);
+                setDraft(emptyDraft);
+              }}
+            >
+              Cancelar edição
+            </button>
+          )}
+        </div>
       </form>
 
-      <h2>Produtos cadastrados</h2>
-      {products.length === 0 && <p>Nenhum produto encontrado.</p>}
-      <ul>
-        {products.map((product) => (
-          <li key={product.id}>
-            <article>
-              <h3>
-                {product.name} <small>({product.status})</small>
-              </h3>
-              <p>Saldo administrativo: {product.stock_quantity}</p>
-              <button disabled={busy} type="button" onClick={() => edit(product)}>
-                Editar dados
-              </button>
-              <form onSubmit={(event) => void adjustStock(event, product.id)}>
-                <label>
-                  Novo saldo{" "}
-                  <input
-                    required
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={stock[product.id]?.newQuantity ?? ""}
-                    onChange={(e) =>
-                      setStock((current) => ({
-                        ...current,
-                        [product.id]: {
-                          newQuantity: e.target.value,
-                          reason: current[product.id]?.reason ?? "",
-                        },
-                      }))
-                    }
-                  />
-                </label>
-                <label>
-                  Motivo (até 400 caracteres){" "}
-                  <input
-                    required
-                    maxLength={400}
-                    value={stock[product.id]?.reason ?? ""}
-                    onChange={(e) =>
-                      setStock((current) => ({
-                        ...current,
-                        [product.id]: {
-                          newQuantity: current[product.id]?.newQuantity ?? "",
-                          reason: e.target.value,
-                        },
-                      }))
-                    }
-                  />
-                </label>
-                <button disabled={busy} type="submit">
-                  Registrar ajuste auditável
+      <section
+        aria-labelledby="catalog-admin-products-title"
+        className="catalog-admin-products"
+        id="catalog-admin-products"
+      >
+        <header className="catalog-admin-products-heading">
+          <h2 id="catalog-admin-products-title">Produtos cadastrados</h2>
+          <span>{products.length} produtos</span>
+        </header>
+        {products.length === 0 && <p>Nenhum produto encontrado.</p>}
+        <ul>
+          {products.map((product) => (
+            <li className="catalog-admin-product" key={product.id}>
+              <article>
+                <h3>
+                  {product.name} <small>({product.status})</small>
+                </h3>
+                <p>Saldo administrativo: {product.stock_quantity}</p>
+                <button disabled={busy} type="button" onClick={() => edit(product)}>
+                  Editar dados
                 </button>
-              </form>
-              <form onSubmit={(event) => void uploadImage(event, product.id)}>
-                <label>
-                  Imagem do produto{" "}
-                  <input
-                    required
-                    type="file"
-                    name="file"
-                    accept="image/avif,image/webp,image/jpeg,image/png"
-                  />
-                </label>
-                <label>
-                  Texto alternativo{" "}
-                  <input
-                    required
-                    maxLength={500}
-                    value={imageAlt[product.id] ?? ""}
-                    onChange={(e) =>
-                      setImageAlt((current) => ({ ...current, [product.id]: e.target.value }))
-                    }
-                  />
-                </label>
-                <button disabled={busy} type="submit">
-                  Adicionar imagem
-                </button>
-              </form>
-            </article>
-          </li>
-        ))}
-      </ul>
+                <form onSubmit={(event) => void adjustStock(event, product.id)}>
+                  <label>
+                    Novo saldo{" "}
+                    <input
+                      required
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={stock[product.id]?.newQuantity ?? ""}
+                      onChange={(e) =>
+                        setStock((current) => ({
+                          ...current,
+                          [product.id]: {
+                            newQuantity: e.target.value,
+                            reason: current[product.id]?.reason ?? "",
+                          },
+                        }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    Motivo (até 400 caracteres){" "}
+                    <input
+                      required
+                      maxLength={400}
+                      value={stock[product.id]?.reason ?? ""}
+                      onChange={(e) =>
+                        setStock((current) => ({
+                          ...current,
+                          [product.id]: {
+                            newQuantity: current[product.id]?.newQuantity ?? "",
+                            reason: e.target.value,
+                          },
+                        }))
+                      }
+                    />
+                  </label>
+                  <button disabled={busy} type="submit">
+                    Registrar ajuste auditável
+                  </button>
+                </form>
+                <form onSubmit={(event) => void uploadImage(event, product.id)}>
+                  <label>
+                    Imagem do produto{" "}
+                    <input
+                      required
+                      type="file"
+                      name="file"
+                      accept="image/avif,image/webp,image/jpeg,image/png"
+                    />
+                  </label>
+                  <label>
+                    Texto alternativo{" "}
+                    <input
+                      required
+                      maxLength={500}
+                      value={imageAlt[product.id] ?? ""}
+                      onChange={(e) =>
+                        setImageAlt((current) => ({ ...current, [product.id]: e.target.value }))
+                      }
+                    />
+                  </label>
+                  <button disabled={busy} type="submit">
+                    Adicionar imagem
+                  </button>
+                </form>
+              </article>
+            </li>
+          ))}
+        </ul>
+      </section>
     </section>
   );
 }

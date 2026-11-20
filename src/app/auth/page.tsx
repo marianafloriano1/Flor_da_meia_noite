@@ -1,17 +1,23 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { SiteNavigation } from "@/app/components/site-navigation";
 import { normalizeAndValidateCpf } from "@/lib/auth/cpf";
 import { normalizePhoneNumber } from "@/lib/auth/phone";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 type PendingChallenge = {
   factorId: string;
+  factorType: "phone" | "totp";
   challengeId: string;
   purpose: "login" | "step-up" | "enroll";
 };
 
+type AdminMfaFactor = { id: string; factorType: "phone" | "totp" };
+
 export default function AuthPage() {
+  const router = useRouter();
   const [mode, setMode] = useState<"login" | "register" | "recovery">("login");
   const [fullName, setFullName] = useState("");
   const [cpf, setCpf] = useState("");
@@ -25,16 +31,81 @@ export default function AuthPage() {
   const [phonePending, setPhonePending] = useState(false);
   const [adminAccount, setAdminAccount] = useState(false);
   const [adminNeedsEnrollment, setAdminNeedsEnrollment] = useState(false);
+  const [adminCanEnrollTotp, setAdminCanEnrollTotp] = useState(false);
+  const [adminFactor, setAdminFactor] = useState<AdminMfaFactor | null>(null);
+  const [totpQrCode, setTotpQrCode] = useState("");
   const [pendingChallenge, setPendingChallenge] = useState<PendingChallenge | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Restore the persisted session only once on initial page load.
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("mode") === "recovery") setMode("recovery");
+    let active = true;
+    const params = new URLSearchParams(window.location.search);
+    const isRecovery = params.get("mode") === "recovery";
+    const hasCallbackError = params.has("error") || params.has("error_code");
+    if (isRecovery) setMode("recovery");
+    if (hasCallbackError && !isRecovery) {
+      setErrorText(
+        "O link de confirmação é inválido ou expirou. Solicite um novo e-mail de confirmação.",
+      );
+    }
+
+    void getSupabaseBrowserClient()
+      .auth.getSession()
+      .then(({ data, error }) => {
+        if (!active || isRecovery || hasCallbackError) return;
+        if (error) {
+          setErrorText(
+            "Não foi possível restaurar a sessão. Abra novamente o link de confirmação ou tente recuperar a senha.",
+          );
+          return;
+        }
+        if (!data.session) return;
+        void continueSignedInUser().catch((error: unknown) => {
+          if (active)
+            setErrorText(
+              error instanceof Error
+                ? error.message
+                : "A sessão foi iniciada, mas não foi possível concluir a autenticação. Tente novamente.",
+            );
+        });
+      })
+      .catch(() => {
+        if (active && !isRecovery)
+          setErrorText(
+            "Não foi possível validar o link de acesso. Solicite um novo e-mail de confirmação.",
+          );
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   async function establishSession() {
-    const response = await fetch("/api/auth/session", { method: "POST" });
-    if (!response.ok) throw new Error("A conta ainda não está cadastrada ou verificada.");
+    const { data, error } = await getSupabaseBrowserClient().auth.getSession();
+    if (error || !data.session)
+      throw new Error("A sessão Supabase não foi persistida após a verificação MFA.");
+    const response = await fetch("/api/auth/session", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${data.session.access_token}` },
+    });
+    if (!response.ok) {
+      const result = (await response.json().catch(() => null)) as { error?: string } | null;
+      if (result?.error === "account_not_provisioned")
+        throw new Error(
+          "A autenticação foi validada, mas esta conta ainda não foi provisionada no aplicativo.",
+        );
+      if (result?.error === "forbidden")
+        throw new Error("A sessão foi validada, mas a origem da solicitação não foi aceita.");
+      if (result?.error === "admin_session_registration_failed")
+        throw new Error(
+          "A sessão AAL2 foi validada, mas o registro seguro da sessão administrativa falhou. Tente novamente.",
+        );
+      throw new Error(
+        "A autenticação foi validada, mas o servidor não conseguiu registrar a sessão administrativa.",
+      );
+    }
   }
 
   async function continueSignedInUser() {
@@ -45,13 +116,35 @@ export default function AuthPage() {
 
     if (user.app_metadata.role === "admin") {
       setAdminAccount(true);
-      const { data: level } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-      const { data: factors } = await supabase.auth.mfa.listFactors();
-      const factor = factors?.phone?.find((item) => item.status === "verified");
-      setAdminNeedsEnrollment(!factor);
-      if (level?.nextLevel === "aal2" && level.currentLevel !== "aal2" && factor) {
-        await startChallenge(factor.id, "login");
+      const [{ data: level }, { data: factors, error: factorsError }] = await Promise.all([
+        supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+        supabase.auth.mfa.listFactors(),
+      ]);
+      if (factorsError) throw new Error("Não foi possível consultar os fatores MFA da conta.");
+      const factor =
+        factors?.totp.find((item) => item.status === "verified") ??
+        factors?.phone.find((item) => item.status === "verified");
+      const selectedFactor = factor
+        ? { id: factor.id, factorType: factor.factor_type as "phone" | "totp" }
+        : null;
+      const canEnroll = !selectedFactor || level?.currentLevel === "aal2";
+      setAdminFactor(selectedFactor);
+      setAdminNeedsEnrollment(!selectedFactor);
+      setAdminCanEnrollTotp(canEnroll);
+      if (level?.nextLevel === "aal2" && level.currentLevel !== "aal2" && selectedFactor) {
+        await startChallenge(selectedFactor.id, "login", selectedFactor.factorType);
         return;
+      }
+      if (!selectedFactor) {
+        setMessage(
+          "Configure um aplicativo autenticador para ativar a proteção MFA da conta administrativa.",
+        );
+        return;
+      }
+      if (selectedFactor.factorType === "phone" && !canEnroll) {
+        setMessage(
+          "Esta conta já possui MFA por SMS. Para cadastrar TOTP com segurança, primeiro confirme o fator SMS existente.",
+        );
       }
     }
 
@@ -59,7 +152,16 @@ export default function AuthPage() {
       await establishSession();
       setShowProfile(false);
       setMessage("Sessão iniciada.");
-    } catch {
+      router.push("/");
+    } catch (error) {
+      if (user.app_metadata.role === "admin") {
+        setErrorText(
+          error instanceof Error
+            ? error.message
+            : "A autenticação foi concluída, mas não foi possível registrar a sessão administrativa.",
+        );
+        return;
+      }
       if (!user.email_confirmed_at) {
         setMessage("Confirme seu e-mail pelo link enviado e entre novamente para continuar.");
         return;
@@ -79,26 +181,46 @@ export default function AuthPage() {
     }
   }
 
-  async function startChallenge(factorId: string, purpose: PendingChallenge["purpose"]) {
+  async function startChallenge(
+    factorId: string,
+    purpose: PendingChallenge["purpose"],
+    factorType: PendingChallenge["factorType"],
+  ) {
     const { data, error } = await getSupabaseBrowserClient().auth.mfa.challenge({ factorId });
-    if (error || !data) throw new Error("Não foi possível enviar o código SMS.");
-    setPendingChallenge({ factorId, challengeId: data.id, purpose });
-    setMessage("Digite o código SMS para confirmar a ação.");
+    if (error || !data) {
+      throw new Error(
+        factorType === "totp"
+          ? "Não foi possível iniciar a verificação do autenticador. Tente novamente."
+          : "Não foi possível enviar o SMS. Verifique a configuração do provedor local.",
+      );
+    }
+    setPendingChallenge({ factorId, factorType, challengeId: data.id, purpose });
+    setMessage(
+      factorType === "totp"
+        ? "Abra seu aplicativo autenticador e informe o código atual de seis dígitos."
+        : "Digite o código SMS para confirmar a ação.",
+    );
   }
 
   async function login() {
     setBusy(true);
     setErrorText("");
     setMessage("");
+    let credentialsAccepted = false;
     try {
       const { error } = await getSupabaseBrowserClient().auth.signInWithPassword({
         email,
         password,
       });
       if (error) throw error;
+      credentialsAccepted = true;
       await continueSignedInUser();
-    } catch {
-      setErrorText("Não foi possível entrar. Confira os dados e a confirmação do e-mail.");
+    } catch (error) {
+      setErrorText(
+        credentialsAccepted && error instanceof Error
+          ? error.message
+          : "Login não efetuado. Confira os dados e a confirmação do e-mail.",
+      );
     } finally {
       setBusy(false);
     }
@@ -192,67 +314,155 @@ export default function AuthPage() {
     setBusy(true);
     setErrorText("");
     try {
-      const { error } = await getSupabaseBrowserClient().auth.verifyOtp({
-        phone,
-        token: code,
-        type: "phone_change",
-      });
-      if (error) throw error;
-      await completeCustomerRegistration();
+      let verificationError: Error | null = null;
+      try {
+        const { error } = await getSupabaseBrowserClient().auth.verifyOtp({
+          phone,
+          token: code.trim(),
+          type: "phone_change",
+        });
+        verificationError = error;
+      } catch {
+        setErrorText("Não foi possível validar o código SMS. Tente novamente ou solicite outro.");
+        return;
+      }
+      if (verificationError) {
+        setErrorText(
+          "Código SMS inválido ou expirado. Solicite um novo e use o código mais recente.",
+        );
+        return;
+      }
+
       setCode("");
+      try {
+        await completeCustomerRegistration();
+      } catch {
+        setErrorText(
+          "Código confirmado, mas não foi possível concluir o cadastro. Confira os dados e tente novamente.",
+        );
+      }
     } catch {
-      setErrorText("Código SMS inválido ou expirado.");
+      setErrorText("O código foi confirmado, mas houve um erro ao concluir o cadastro.");
     } finally {
       setBusy(false);
     }
   }
 
   async function verifyMfaCode() {
-    if (!pendingChallenge) return;
+    const challenge = pendingChallenge;
+    if (!challenge) return;
     setBusy(true);
     setErrorText("");
     try {
       const supabase = getSupabaseBrowserClient();
-      const { error } = await supabase.auth.mfa.verify({
-        factorId: pendingChallenge.factorId,
-        challengeId: pendingChallenge.challengeId,
-        code,
-      });
-      if (error) throw error;
-      if (pendingChallenge.purpose === "enroll") {
-        setAdminNeedsEnrollment(false);
-        await establishSession();
-        setMessage("Fator SMS cadastrado. As próximas ações administrativas exigirão confirmação.");
-      } else if (pendingChallenge.purpose === "step-up") {
-        const response = await fetch("/api/auth/step-up", { method: "POST" });
-        if (!response.ok) throw new Error("Não foi possível renovar a verificação administrativa.");
-        setMessage("Verificação administrativa renovada.");
-      } else {
-        await establishSession();
-        setMessage("Sessão administrativa protegida iniciada.");
+      let verificationError: Error | null = null;
+      try {
+        const { error } = await supabase.auth.mfa.verify({
+          factorId: challenge.factorId,
+          challengeId: challenge.challengeId,
+          code: code.trim(),
+        });
+        verificationError = error;
+      } catch {
+        setErrorText(
+          challenge.factorType === "totp"
+            ? "Não foi possível validar o código do autenticador. Confira o horário do dispositivo e tente o código atual."
+            : "Não foi possível validar o código SMS. Tente novamente ou solicite outro.",
+        );
+        return;
       }
+      if (verificationError) {
+        setErrorText(
+          challenge.factorType === "totp"
+            ? "Código do autenticador inválido ou expirado. Aguarde o próximo código e tente novamente."
+            : "Código SMS inválido ou expirado. Solicite um novo e use o código mais recente.",
+        );
+        return;
+      }
+
+      const purpose = challenge.purpose;
       setPendingChallenge(null);
       setCode("");
+      try {
+        if (purpose === "enroll") {
+          setAdminNeedsEnrollment(false);
+          setAdminFactor({ id: challenge.factorId, factorType: challenge.factorType });
+          setTotpQrCode("");
+          await establishSession();
+          setMessage(
+            challenge.factorType === "totp"
+              ? "Aplicativo autenticador configurado. A sessão administrativa está protegida por MFA."
+              : "Fator SMS confirmado. A sessão administrativa está protegida por MFA.",
+          );
+          router.push("/");
+        } else if (purpose === "step-up") {
+          const response = await fetch("/api/auth/step-up", { method: "POST" });
+          if (!response.ok) throw new Error("step_up_session_rejected");
+          setMessage("Verificação administrativa renovada.");
+        } else {
+          await establishSession();
+          setMessage("Sessão administrativa protegida iniciada.");
+          router.push("/");
+        }
+      } catch (error) {
+        if (error instanceof Error && error.message === "step_up_session_rejected") {
+          setErrorText(
+            "O código foi confirmado, mas o servidor não registrou a renovação MFA. Entre novamente e tente outra vez.",
+          );
+        } else {
+          setErrorText(
+            error instanceof Error
+              ? `Código confirmado, mas ${error.message.charAt(0).toLowerCase()}${error.message.slice(1)}`
+              : "Código confirmado, mas o servidor não conseguiu concluir a sessão.",
+          );
+        }
+      }
     } catch {
-      setErrorText("Código SMS inválido ou expirado.");
+      setErrorText("O código foi confirmado, mas houve um erro ao concluir a sessão.");
     } finally {
       setBusy(false);
     }
   }
 
-  async function enrollAdminFactor() {
+  async function enrollAdminTotp() {
     setBusy(true);
     setErrorText("");
     try {
+      if (!adminCanEnrollTotp)
+        throw new Error("Confirme primeiro o fator MFA já cadastrado antes de adicionar outro.");
+      const { data, error } = await getSupabaseBrowserClient().auth.mfa.enroll({
+        factorType: "totp",
+        friendlyName: "Flor da Meia-Noite",
+      });
+      if (error) throw error;
+      if (!data.totp?.qr_code) throw new Error("O Supabase não retornou o QR do autenticador.");
+      setTotpQrCode(data.totp.qr_code);
+      setAdminFactor({ id: data.id, factorType: "totp" });
+      await startChallenge(data.id, "enroll", "totp");
+    } catch (error) {
+      setErrorText(
+        error instanceof Error ? error.message : "Não foi possível iniciar o cadastro TOTP.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function enrollAdminPhoneFactor() {
+    setBusy(true);
+    setErrorText("");
+    try {
+      if (!adminCanEnrollTotp)
+        throw new Error("Confirme primeiro o fator MFA já cadastrado antes de adicionar outro.");
       const { data, error } = await getSupabaseBrowserClient().auth.mfa.enroll({
         factorType: "phone",
         phone,
       });
       if (error) throw error;
-      await startChallenge(data.id, "enroll");
-    } catch {
+      await startChallenge(data.id, "enroll", "phone");
+    } catch (error) {
       setErrorText(
-        "Não foi possível iniciar o cadastro MFA. Verifique o celular e o provedor SMS.",
+        error instanceof Error ? error.message : "Não foi possível iniciar o cadastro SMS.",
       );
     } finally {
       setBusy(false);
@@ -265,9 +475,11 @@ export default function AuthPage() {
     try {
       const { data, error } = await getSupabaseBrowserClient().auth.mfa.listFactors();
       if (error) throw error;
-      const factor = data.phone.find((item) => item.status === "verified");
-      if (!factor) throw new Error("Cadastre primeiro um fator SMS administrativo.");
-      await startChallenge(factor.id, "step-up");
+      const factor =
+        data.totp.find((item) => item.status === "verified") ??
+        data.phone.find((item) => item.status === "verified");
+      if (!factor) throw new Error("Cadastre primeiro um fator MFA administrativo.");
+      await startChallenge(factor.id, "step-up", factor.factor_type as "phone" | "totp");
     } catch (error) {
       setErrorText(
         error instanceof Error ? error.message : "Não foi possível solicitar novo código.",
@@ -319,8 +531,9 @@ export default function AuthPage() {
   }
 
   return (
-    <main className="page-shell">
+    <main className="page-shell auth-page">
       <section className="intro auth-card" aria-labelledby="auth-title">
+        <SiteNavigation compact />
         <p className="eyebrow">FLOR DA MEIA-NOITE</p>
         <h1 id="auth-title">
           {mode === "login"
@@ -389,7 +602,9 @@ export default function AuthPage() {
           )}
           {(pendingChallenge || phonePending) && (
             <label>
-              Código recebido
+              {pendingChallenge?.factorType === "totp"
+                ? "Código do aplicativo autenticador"
+                : "Código recebido por SMS"}
               <input
                 inputMode="numeric"
                 autoComplete="one-time-code"
@@ -420,9 +635,31 @@ export default function AuthPage() {
             </button>
           )}
           {pendingChallenge && (
-            <button type="button" disabled={busy} onClick={() => void verifyMfaCode()}>
-              {busy ? "Aguarde…" : "Confirmar código"}
-            </button>
+            <>
+              <button type="button" disabled={busy} onClick={() => void verifyMfaCode()}>
+                {busy ? "Aguarde…" : "Confirmar código"}
+              </button>
+              <button
+                className="text-button"
+                type="button"
+                disabled={busy}
+                onClick={() =>
+                  void startChallenge(
+                    pendingChallenge.factorId,
+                    pendingChallenge.purpose,
+                    pendingChallenge.factorType,
+                  ).catch((error: unknown) =>
+                    setErrorText(
+                      error instanceof Error
+                        ? error.message
+                        : "Não foi possível iniciar outro desafio MFA.",
+                    ),
+                  )
+                }
+              >
+                Gerar novo desafio MFA
+              </button>
+            </>
           )}
           {mode === "recovery" && (
             <button type="button" disabled={busy} onClick={() => void completePasswordRecovery()}>
@@ -439,22 +676,74 @@ export default function AuthPage() {
               Recuperar senha por e-mail
             </button>
           )}
+          {adminAccount && totpQrCode && (
+            <div className="auth-totp-setup" aria-live="polite">
+              <p>
+                Escaneie este QR no Google Authenticator, Microsoft Authenticator ou outro app TOTP.
+                O QR é temporário; não compartilhe esta tela.
+              </p>
+              {/* Supabase returns a data URL for the official TOTP provisioning QR. */}
+              {/* biome-ignore lint/performance/noImgElement: Supabase returns this short-lived QR as a data URL. */}
+              <img
+                src={totpQrCode}
+                alt="QR temporário para cadastrar MFA no aplicativo autenticador"
+              />
+              <p>
+                Depois, informe o código de seis dígitos gerado pelo aplicativo para confirmar o
+                cadastro.
+              </p>
+            </div>
+          )}
           {adminAccount && !pendingChallenge && (
             <>
-              <label>
-                Celular para MFA administrativo
-                <input
-                  type="tel"
-                  placeholder="+5511999999999"
-                  value={phone}
-                  onChange={(event) => setPhone(event.target.value)}
-                />
-              </label>
-              {adminNeedsEnrollment ? (
-                <button type="button" disabled={busy} onClick={() => void enrollAdminFactor()}>
-                  Cadastrar fator SMS administrativo
+              {totpQrCode && adminFactor?.factorType === "totp" && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() =>
+                    void startChallenge(adminFactor.id, "enroll", "totp").catch((error: unknown) =>
+                      setErrorText(
+                        error instanceof Error
+                          ? error.message
+                          : "Não foi possível iniciar o desafio TOTP.",
+                      ),
+                    )
+                  }
+                >
+                  Continuar configuração do autenticador
                 </button>
-              ) : (
+              )}
+              {adminNeedsEnrollment && adminCanEnrollTotp && (
+                <button type="button" disabled={busy} onClick={() => void enrollAdminTotp()}>
+                  Configurar aplicativo autenticador (TOTP)
+                </button>
+              )}
+              {adminFactor?.factorType === "phone" && adminCanEnrollTotp && (
+                <button type="button" disabled={busy} onClick={() => void enrollAdminTotp()}>
+                  Adicionar aplicativo autenticador (TOTP)
+                </button>
+              )}
+              {adminNeedsEnrollment && adminCanEnrollTotp && (
+                <>
+                  <label>
+                    Celular para MFA por SMS (opcional)
+                    <input
+                      type="tel"
+                      placeholder="+5511999999999"
+                      value={phone}
+                      onChange={(event) => setPhone(event.target.value)}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void enrollAdminPhoneFactor()}
+                  >
+                    Configurar MFA por SMS
+                  </button>
+                </>
+              )}
+              {!adminNeedsEnrollment && adminFactor && (
                 <button type="button" disabled={busy} onClick={() => void renewAdminStepUp()}>
                   Renovar verificação administrativa
                 </button>
@@ -478,6 +767,11 @@ export default function AuthPage() {
             >
               {mode === "login" ? "Ainda não tenho cadastro" : "Já tenho conta"}
             </button>
+          )}
+          {mode === "login" && !showProfile && !pendingChallenge && (
+            <a className="auth-staff-link" href="/auth?mode=login">
+              Sou funcionário
+            </a>
           )}
           {mode === "recovery" && (
             <button className="text-button" type="button" onClick={() => setMode("login")}>

@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { SiteNavigation } from "@/app/components/site-navigation";
 import { getReportsAdmin } from "@/lib/reports/authorization";
 import { parseReportFilters } from "@/lib/reports/periods";
 import { getOperationsReport } from "@/lib/reports/service";
@@ -40,10 +40,7 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
 
   return (
     <main className="catalog-shell">
-      <nav className="catalog-nav" aria-label="Navegação administrativa">
-        <Link href="/admin/catalog">Catálogo</Link>
-        <Link href="/admin/orders">Pedidos</Link>
-      </nav>
+      <SiteNavigation />
       <header className="catalog-header">
         <p className="eyebrow">ADMINISTRAÇÃO</p>
         <h1>Relatórios</h1>
